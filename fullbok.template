@@ -66,7 +66,7 @@
       "eu-west-1":      { "name":"Ireland",    "64": "ami-149f7863" , "64HVM" : "ami-209f7857" },
       "ap-southeast-1": { "name":"Singapole",  "64": "ami-14f2b946" , "64HVM" : "ami-6af2b938" },
       "ap-southeast-2": { "name":"Sydney",     "64": "ami-a148d59b" , "64HVM" : "ami-a948d593" },
-      "ap-northeast-1": { "name":"Tokyo",      "64": "ami-3561fe34" , "64HVM" : "ami-0961fe08" },
+      "ap-northeast-1": { "name":"Tokyo",      "64": "ami-507f9631" , "64HVM" : "ami-600ae001" },
       "sa-east-1":      { "name":"SaoPaulo",   "64": "ami-9f6ec982" , "64HVM" : "ami-9d6ec980" }
     },
     "StackConfig" : {
@@ -285,9 +285,39 @@
         "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
           "#! /bin/bash -v\n",
           "yum update -y\n",
-
+          "yum install -y epel-release python-pip wget gcc make zlib-devel openssl-devel\n",
+          
+            
+          "python -V\n",
+          "export PATH=$PATH:/opt/aws/bin\n",
+          "export PATH\n",
+          
+          
+          "# Install aws-cli\n",
+          "pip install pystache\n",
+          "pip install argparse\n",
+          "pip install python-daemon\n",
+          "pip install requests\n",
+          "pip install awscli\n",
+          "yum -y update\n",
+          "cd /opt\n",
+          "curl -O https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+          "tar -xvpf aws-cfn-bootstrap-latest.tar.gz\n",
+          "cd aws-cfn-bootstrap-1.4/\n",
+          "python setup.py build\n",
+          "python setup.py install\n",
+          "chmod 775 /opt/aws-cfn-bootstrap-1.4/bin/*\n",
+          "cd /opt\n",
+          "mkdir aws\n",
+          "cd aws\n",
+          "ln -s /opt/aws-cfn-bootstrap-1.4/bin /opt/aws/\n",
+          
+          
+          "# Continuous Release Repository setting for unbound\n",
+          "yum install -y java-1.7.0-openjdk\n",
+          "yum install -y java-1.7.0-openjdk-devel\n", 
           "# Install local dns resolver\n",
-          "yum install -y --enablerepo=epel unbound\n",
+          "yum install -y unbound\n",
           "sed -i 's/val-permissive-mode: .*/val-permissive-mode: yes/g' /etc/unbound/unbound.conf\n",
           "echo -e 'forward-zone:\n\tname: ", { "Ref": "AWS::Region" } ,".compute.internal\n\tforward-addr: 10.0.0.2' >> /etc/unbound/unbound.conf\n",
           "service unbound start\n",
@@ -309,6 +339,7 @@
           "sysctl -p\n",
 
           "echo \"/opt/apache-jmeter-2.10/bin/jmeter-server | logger -p daemon.info &\" >>/etc/rc.local\n",
+          "sh /opt/apache-jmeter-2.10/bin/jmeter -s -n &",
 
           "# All is well so signal success\n",
           "/opt/aws/bin/cfn-signal -e $? -r \"SlaveInstanceLaunchConfig setup complete\" '", { "Ref" : "SlaveWaitHandle" }, "'\n"
@@ -319,7 +350,6 @@
           "config" : {
             "packages" : {
               "yum" : {
-                "java-1.7.0-openjdk-devel" : []
               }
             },
             "sources" : {
